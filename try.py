@@ -13,9 +13,7 @@ with open(file_path, 'r', encoding='utf-8') as file:
 soup = BeautifulSoup(content, 'html.parser')
 
 # Extract text from the HTML
-text = soup.get_text(separator="\n")
-
-print (text)
+text = soup.get_text(separator=" ")
 
 # Find the index of the first occurrence of "Bond No."
 start_index = text.find("Bond No.")
@@ -26,20 +24,18 @@ else:
     # Extract the text after the first occurrence of "Bond No."
     relevant_text = text[start_index:]
 
-    # Define regex pattern to match the provided data structure
+    # Clean text: remove all unwanted spaces, tabs, and newlines
+    cleaned_text = re.sub(r'\s+', '', relevant_text)
+
+    # Define the regex pattern to match the data entries with flexible separators
     pattern = re.compile(
-        r'(\w+)\s+(\d+)\s+([\d.]+)\s+(\d{2}/\d{2}/\d{4})\s+(\d{2}/\d{2}/\d{4})\s+(\d+)\s+(\d{2}/\d{2}/\d{4})\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)'
+        r'(\w{3})\.?(\d{1,2})\.?(\d{1,2}\.\d{2})\.?(\d{2}/\d{2}/\d{4})\.?(\d{2}/\d{2}/\d{4})\.?(\d{1})\.?(\d{2}/\d{2}/\d{4})\.?(\d+\.\d{5})\.?(\d+\.\d{4})\.?(\d+\.\d{4})'
     )
-    # pattern = re.compile(
-    #     r'(\w+)\s+(\d{2})\s+([\d]+\.[\d]{2})\s+(\d{2}/\d{2}/\d{4})\s+(\d{2}/\d{2}/\d{4})\s+(\d+)\s+(\d{2}/\d{2}/\d{4})\s+([\d]+\.[\d]{5})\s+([\d]+\.[\d]{4})\s+([\d]+\.[\d]{4})'
-    # )
 
-    # Process lines to extract structured data
+    # Process the cleaned text to extract structured data
     data = []
-    for match in re.finditer(pattern, relevant_text):
+    for match in re.finditer(pattern, cleaned_text):
         data.append(match.groups())
-
-    print (data)
 
     if not data:
         print("No matching data found.")
@@ -48,7 +44,10 @@ else:
         columns = ["Bond No.", "Term (Years)", "Coupon (%)", "Issue Date", "Maturity Date", "Deals", "Trade Date", "Amount (Bln TZS)", "Price (%)", "Yield"]
         df = pd.DataFrame(data, columns=columns)
 
+        # Print the DataFrame
+        print(df)
+
         # Save to Excel
-        df.to_excel('1112odododt.xlsx', index=False)
+        df.to_excel('nowsdeoutput.xlsx', index=False)
 
         print("Data has been successfully written to output.xlsx")

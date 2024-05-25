@@ -1,5 +1,6 @@
 import pandas as pd
 from bs4 import BeautifulSoup
+import re
 
 # Path to the local HTML file
 file_path = "/mnt/c/Users/erick.makilagi/Downloads/dse.htm"  # Update with the actual file path
@@ -12,51 +13,42 @@ with open(file_path, 'r', encoding='utf-8') as file:
 soup = BeautifulSoup(content, 'html.parser')
 
 # Extract text from the HTML
-text = soup.get_text(separator="\n")
+text = soup.get_text(separator=" ")
 
-# Split the text into lines
-lines = text.split("\n")
+# Find the index of the first occurrence of "Bond No."
+start_index = text.find("Bond No.")
 
-# Initialize variables to store data
-data = []
-current_data = []
+if start_index == -1:
+    print("Pattern not found in the text.")
+else:
+    # Extract the text after the first occurrence of "Bond No."
+    relevant_text = text[start_index:]
 
-# Define a flag to indicate if we are in the relevant data section
-in_data_section = False
+    # Clean text: remove all unwanted spaces, tabs, and newlines
+    cleaned_text = re.sub(r'\s+', '', relevant_text)
 
-# Process lines to extract structured data
-for line in lines:
-    # Check if the line contains "Bond No." indicating the start of relevant data
-    if "Bond No." in line:
-        in_data_section = True
-        continue
+    # Define the regex pattern to match the data entries with flexible separators
+    pattern = re.compile(
+        r'(\w{2,3})\.?(\d{1,2})\.?(\d{1,2}\.\d{2})\.?(\d{2}/\d{2}/\d{4})\.?(\d{2}/\d{2}/\d{4})\.?(\d{1})\.?(\d{2}/\d{2}/\d{4})\.?(\d+\.\d{4})\.?(\d+\.\d{5})\.?(\d+\.\d{5})'
+    )
 
-    # Check if the line contains "Total" indicating the end of data
-    if "Total" in line:
-        if current_data:
-            data.append(current_data)
-        break
+    # Process the cleaned text to extract structured data
+    data = []
+    for match in re.finditer(pattern, cleaned_text):
+        groups = match.groups()
+        data.append(groups)
 
-    # If we are in the relevant data section, extract the data
-    if in_data_section:
-        # Split the line by whitespace
-        elements = line.split()
-        
-        # Ensure that the line has the expected number of elements
-        if len(elements) == 10:
-            current_data.append(elements)
-        else:
-            # If the line doesn't have the expected number of elements, reset current_data
-            if current_data:
-                data.append(current_data)
-                current_data = []
+    if not data:
+        print("No matching data found.")
+    else:
+        # Convert to DataFrame
+        columns = ["Bond No.", "Term (Years)", "Coupon (%)", "Issue Date", "Maturity Date", "Deals", "Trade Date", "Amount (Bln TZS)", "Price (%)", "Yield"]
+        df = pd.DataFrame(data, columns=columns)
 
-# Convert to DataFrame
-columns = ["Bond No.", "Term (Years)", "Coupon (%)", "Issue Date", "Maturity Date", "Deals", "Trade Date", "Amount (Bln TZS)", "Price (%)", "Yield"]
-df = pd.DataFrame(data, columns=columns)
+        # Print the DataFrame
+        print(df)
 
-# Save to Excel
-excel_file = '12344output.xlsx'
-df.to_excel(excel_file, index=False)
+        # Save to Excel
+        df.to_excel('output.xlsx', index=False)
 
-print(f"Data has been successfully written to {excel_file}")
+        print("Data has been successfully written to output.xlsx")
