@@ -3,8 +3,8 @@ from bs4 import BeautifulSoup
 import re
 
 # Path to the local HTML file
-file_path = "/mnt/c/Users/erick.makilagi/Downloads/dse.htm"  # Update with the actual file path
-
+# file_path = "/mnt/c/Users/erick.makilagi/Downloads/dse.htm"  # Update with the actual file path
+file_path = input("Please enter the file path to the HTML file: ")
 # Read the HTML file
 with open(file_path, 'r', encoding='utf-8') as file:
     content = file.read()

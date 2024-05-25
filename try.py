@@ -2,8 +2,12 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import re
 
-# Path to the local HTML file
-file_path = "/mnt/c/Users/erick.makilagi/Downloads/dse.htm"  # Update with the actual file path
+# option A Path to the local HTML file
+# file_path = "/mnt/c/Users/erick.makilagi/Downloads/dse.htm"  # Update with the actual file path
+
+
+#Otion B ask fo file path
+file_path = input("Please enter the file path to the HTML file: ")
 
 # Read the HTML file
 with open(file_path, 'r', encoding='utf-8') as file:
@@ -46,8 +50,8 @@ else:
 
         # Print the DataFrame
         print(df)
-
+        file='DSE_bond_data.xlsx'
         # Save to Excel
-        df.to_excel('nowsdeoutput.xlsx', index=False)
+        df.to_excel(file, index=False)
 
-        print("Data has been successfully written to output.xlsx")
+        print(f"Data has been successfully written to {file}")
