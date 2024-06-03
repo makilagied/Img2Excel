@@ -1,13 +1,14 @@
 import pandas as pd
 from bs4 import BeautifulSoup
+import psycopg2
 import re
 
 # option A Path to the local HTML file
-# file_path = "/mnt/c/Users/erick.makilagi/Downloads/dse.htm"  # Update with the actual file path
+file_path = "/mnt/c/Users/erick.makilagi/Downloads/dse.htm"
 
 
 #Otion B ask fo file path
-file_path = input("Please enter the file path to the HTML file: ")
+# file_path = input("Please enter the file path to the HTML file: ")
 
 # Read the HTML file
 with open(file_path, 'r', encoding='utf-8') as file:
@@ -45,7 +46,7 @@ else:
         print("No matching data found.")
     else:
         # Convert to DataFrame
-        columns = ["Bond No.", "Term (Years)", "Coupon (%)", "Issue Date", "Maturity Date", "Deals", "Trade Date", "Amount (Bln TZS)", "Price (%)", "Yield"]
+        columns = ["Bond_No.", "Term (Years)", "Coupon (%)", "Issue Date", "Maturity Date", "Deals", "Trade Date", "Amount (Bln TZS)", "Price (%)", "Yield"]
         df = pd.DataFrame(data, columns=columns)
 
         # Print the DataFrame
@@ -55,3 +56,42 @@ else:
         df.to_excel(file, index=False)
 
         print(f"Data has been successfully written to {file}")
+
+
+# Connect to PostgreSQL Database
+conn = psycopg2.connect(
+    dbname="DSE_DB",
+    user="postgres",
+    password="iTrust123",
+    host="192.168.1.18",
+    port="5432"
+)
+cur = conn.cursor()
+
+# Check if any trade dates already exist in the table
+trade_dates = tuple(df['Trade Date'].unique())
+query = f"SELECT \"TradeDate\" FROM bond_data WHERE \"TradeDate\" IN %s"
+cur.execute(query, (trade_dates,))
+existing_trade_dates = {row[0] for row in cur.fetchall()}
+
+if existing_trade_dates:
+    print(f"Trade dates {existing_trade_dates} already exist. Skipping insertion.")
+else:
+    # Insert data into PostgreSQL table
+    query = """INSERT INTO bond_data ("Bond_No.", "Term", "Coupon", "IssueDate", "MaturityDate", "Deals", "TradeDate", "Amount", "Price", "Yield") 
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+    values = [(
+        row['Bond_No.'], row['Term (Years)'], row['Coupon (%)'], row['Issue Date'], row['Maturity Date'], 
+        row['Deals'], row['Trade Date'], row['Amount (Bln TZS)'], row['Price (%)'], row['Yield']
+    ) for _, row in df.iterrows()]
+    cur.executemany(query, values)
+    print("Data has been successfully inserted.")
+
+
+# Commit changes
+conn.commit()
+
+# Close database connection
+cur.close()
+conn.close()
+
